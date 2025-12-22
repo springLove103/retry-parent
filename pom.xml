@@ -12,6 +12,7 @@
         <module>rest-retry</module>
         <module>call-sys</module>
         <module>easy-retry</module>
+        <module>alibaba-retry-demo</module>
     </modules>
 
     <properties>
