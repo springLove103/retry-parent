@@ -14,6 +14,7 @@
         <module>easy-retry</module>
         <module>simple-retry</module>
         <module>fast-retry-demo</module>
+        <module>alibaba-retry-demo</module>
     </modules>
 
     <properties>
