@@ -1,6 +1,7 @@
 package org.simple;
 
 import com.google.gson.Gson;
+import okhttp3.*;
 import org.simple.http.FormatType;
 import org.simple.http.HttpRequest;
 import org.simple.http.HttpResponse;

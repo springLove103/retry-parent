@@ -1,6 +1,7 @@
 package org.simple;
 
 import com.google.gson.Gson;
+import okhttp3.*;
 import org.simple.retry.RetryTemplate;
 
 import java.io.IOException;
