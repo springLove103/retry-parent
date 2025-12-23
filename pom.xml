@@ -12,6 +12,8 @@
         <module>rest-retry</module>
         <module>call-sys</module>
         <module>easy-retry</module>
+        <module>simple-retry</module>
+        <module>fast-retry-demo</module>
         <module>alibaba-retry-demo</module>
         <module>multiple-instances</module>
     </modules>
