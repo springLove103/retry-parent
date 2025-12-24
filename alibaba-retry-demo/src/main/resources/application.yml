@@ -5,7 +5,7 @@ spring:
   easyretry:
     mybatis:
       enabled: true
-      max-retry-times: 3
+      max-retry-times: 10
 
 server:
   port: 8080
@@ -13,9 +13,9 @@ server:
 # MySQL 连接信息（请替换下面的 host/db/user/password）
 easy:
   datasource:
-    url: jdbc:mysql://localhost:3306/demo?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC&useSSL=false
-    username: root
-    password: 111111
+    url: jdbc:mysql://192.168.103.154:3306/dy_table?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC&useSSL=false
+    username: yanfa_admin
+    password: q3fqlMaj5a512fda#w6ae5
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 logging:

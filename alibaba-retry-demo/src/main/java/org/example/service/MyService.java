@@ -1,6 +1,7 @@
 package org.example.service;
 
 
+import com.alibaba.easyretry.common.constant.enums.RetryTypeEnum;
 import com.alibaba.easyretry.extension.spring.aop.EasyRetryable;
 import org.springframework.stereotype.Service;
 
@@ -14,9 +15,10 @@ public class MyService {
 
     @EasyRetryable
     public void sendToThirdParty(String payload) {
-        counter++;
-        System.out.println(new Date() + " - 执行 sendToThirdParty，尝试次数 = " + counter + ", payload=" + payload);
-        // 故意抛异常，触发 persistence retry（会写入 retry_task 表）
-        throw new RuntimeException("模拟第三方调用失败");
+        if (payload.equals("hello")) {
+            counter++;
+            System.out.println(new Date() + " - 执行 sendToThirdParty，尝试次数 = " + counter + ", payload=" + payload);
+            throw new RuntimeException("模拟第三方调用失败");
+        }
     }
 }
