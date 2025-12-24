@@ -15,6 +15,7 @@
         <module>simple-retry</module>
         <module>fast-retry-demo</module>
         <module>alibaba-retry-demo</module>
+        <module>multiple-instances</module>
     </modules>
 
     <properties>

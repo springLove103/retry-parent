@@ -1,0 +1,22 @@
+server:
+  port: 0        # 业务端口，随意
+
+spring:
+  application:
+    name: multiple-service     # 注册到 Nacos 的服务名
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848   # Nacos 地址
+        namespace: public               # 命名空间 ID
+        group: DEFAULT_GROUP            # 分组
+        # 可选：元数据
+        metadata:
+          version: v1.0
+          region: hz
+
+
+
+logging:
+  level:
+    com.alibaba.cloud.nacos: DEBUG
