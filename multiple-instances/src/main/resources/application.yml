@@ -4,10 +4,15 @@ server:
 spring:
   application:
     name: multiple-service     # 注册到 Nacos 的服务名
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://192.168.103.154:3306/dy_table?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8&autoReconnect=true&zeroDateTimeBehavior=convertToNull
+    username: yanfa_admin
+    password: q3fqlMaj5a512fda#w6ae5
   cloud:
     nacos:
       discovery:
-        server-addr: 127.0.0.1:8848   # Nacos 地址
+        server-addr: 192.168.103.213:30669   # Nacos 地址
         namespace: public               # 命名空间 ID
         group: DEFAULT_GROUP            # 分组
         # 可选：元数据

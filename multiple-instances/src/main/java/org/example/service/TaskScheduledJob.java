@@ -2,11 +2,13 @@ package org.example.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.dto.ShardingInfo;
-import org.example.mapper.TaskMapper;
+import org.example.entity.EasyRetryTask;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Slf4j
 @Component
@@ -16,7 +18,7 @@ public class TaskScheduledJob {
     private ShardingService shardingService;
 
     @Autowired
-    private TaskMapper taskMapper;
+    private IEasyRetryTaskService easyRetryTaskService;
 
     @Value("${spring.application.name}")
     private String serviceName;
@@ -35,11 +37,11 @@ public class TaskScheduledJob {
         log.info("分片信息：Index={}, Total={}", sharding.getIndex(), sharding.getTotal());
 
         // 2. 按照分片查询数据
-        List<TaskEntity> tasks = taskMapper.selectTasksBySharding(sharding.getIndex(), sharding.getTotal(), 100);
+        List<EasyRetryTask> tasks = easyRetryTaskService.getPendingTasks(sharding.getIndex(), sharding.getTotal(), 100);
 
-        for (TaskEntity task : tasks) {
+        for (EasyRetryTask task : tasks) {
             // 3. 尝试抢占任务（防并发双重保险）
-            if (taskMapper.lockTask(task.getId()) > 0) {
+            if (easyRetryTaskService.updateToProcessing(task.getId())) {
                 try {
                     // 4. 执行业务逻辑
                     process(task);
@@ -51,7 +53,7 @@ public class TaskScheduledJob {
         }
     }
 
-    private void process(TaskEntity task) {
+    private void process(EasyRetryTask task) {
         // 实际业务逻辑代码
     }
 }

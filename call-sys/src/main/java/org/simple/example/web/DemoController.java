@@ -29,9 +29,4 @@ public class DemoController {
 //        return Map.of("status", "200", "message", "success");
     }
 
-//    @PostMapping("/demo1")
-//    public Result<OrderResp> getDemo1(@RequestBody OrderReq req) {
-//        System.out.println(req);
-//        return Result.success(new OrderResp());
-//    }
 }
