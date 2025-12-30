@@ -10,6 +10,7 @@ import org.example.dto.ShardingInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -59,5 +60,45 @@ public class ShardingService {
             log.error("从Nacos获取实例列表失败", e);
             return new ShardingInfo(-1, 0);
         }
+    }
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 8; i++) {
+            List<Integer> shards = calculateShards(i, 8, 64);
+            System.out.println(shards);
+        }
+    }
+
+    public static List<Integer> calculateShards(int myIndex, int totalInstances, int totalShards) {
+        if (myIndex < 0 || myIndex >= totalInstances) {
+            throw new IllegalArgumentException("myIndex out of range");
+        }
+        List<Integer> result = new ArrayList<>();
+
+        // 假设 totalShards=64, totalInstances=10
+        // 平均每人分几个？ 64 / 10 = 6
+        int avg = totalShards / totalInstances;
+
+        // 还剩下几个分不完？ 64 % 10 = 4 (余数)
+        // 这 4 个片，通常分给排名前 4 的人 (index 0~3)
+        int remainder = totalShards % totalInstances;
+        // 1. 确定起点 (start)
+        // 前 myIndex 个人，有些人分到了 avg+1 个，有些人分到了 avg 个
+        // 简单的公式推导：
+        int start = 0;
+        for (int i = 0; i < myIndex; i++) {
+            // 如果 index < remainder，说明这个人分到了 avg+1 个
+            start += avg + (i < remainder ? 1 : 0);
+        }
+        // 2. 确定我应该领几个 (count)
+        // 如果我的排名在余数范围内 (myIndex < 4)，我就领 avg+1 (7个)
+        // 否则我就领 avg (6个)
+        int myCount = avg + (myIndex < remainder ? 1 : 0);
+        // 3. 生成 ID 列表
+        for (int i = 0; i < myCount; i++) {
+            result.add(start + i);
+        }
+
+        return result;
     }
 }
