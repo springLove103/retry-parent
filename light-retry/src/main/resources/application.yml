@@ -1,0 +1,82 @@
+server:
+  port: 0        # 业务端口，随意
+
+spring:
+  application:
+    name: light-retry     # 注册到 Nacos 的服务名
+  shardingsphere:
+    # 数据源配置
+    datasource:
+      names: ds0
+      ds0:
+        type: com.zaxxer.hikari.HikariDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        jdbc-url: jdbc:mysql://192.168.103.154:3306/dy_table?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8&autoReconnect=true&zeroDateTimeBehavior=convertToNull
+        username: yanfa_admin
+        password: q3fqlMaj5a512fda#w6ae5
+    # 规则配置
+    rules:
+      # 分片规则
+      sharding:
+        default-database-strategy:
+          standard:
+            sharding-algorithm-name: database-inline
+            sharding-column: gmt_create
+        tables:
+          easy_retry_task:
+            actual-data-nodes: ds0.easy_retry_task
+            key-generate-strategy:
+              column: id
+              key-generator-name: snowflake
+            tableStrategy:
+              complex:
+                shardingColumns: sharding,gmt_create
+                sharding-algorithm-name: time-shard-algorithm
+
+        sharding-algorithms:
+          database-inline:
+            type: INLINE
+            props:
+              algorithm-expression: ds0
+              allow-range-query-with-inline-sharding: true
+          time-shard-algorithm:
+            props:
+              algorithmClassName: org.light.config.TimeShardAlgorithm
+              strategy: COMPLEX
+            type: CLASS_BASED
+
+        key-generators:
+          snowflake:
+            type: SNOWFLAKE
+    props:
+      sql-show: true
+    mode:
+      type: Standalone
+
+
+
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.103.213:30669   # Nacos 地址
+        namespace: public               # 命名空间 ID
+        group: DEFAULT_GROUP            # 分组
+        # 可选：元数据
+        metadata:
+          version: v1.0
+          region: hz
+
+
+
+logging:
+  level:
+    com.alibaba.cloud.nacos: DEBUG
+
+
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: org.light.entity
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
