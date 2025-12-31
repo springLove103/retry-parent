@@ -63,10 +63,12 @@ public class ShardingService {
     }
 
     public static void main(String[] args) {
-        for (int i = 0; i < 8; i++) {
-            List<Integer> shards = calculateShards(i, 8, 64);
+        for (int i = 0; i < 3; i++) {
+            List<Integer> shards = calculateShards(i, 3, 64);
             System.out.println(shards);
         }
+//        List<Integer> shards = calculateShards(0, 3, 64);
+//        System.out.println(shards);
     }
 
     public static List<Integer> calculateShards(int myIndex, int totalInstances, int totalShards) {
