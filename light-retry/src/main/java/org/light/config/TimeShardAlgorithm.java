@@ -2,6 +2,8 @@ package org.light.config;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
+import com.google.common.collect.Sets;
+import lombok.val;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.shardingsphere.sharding.api.sharding.complex.ComplexKeysShardingAlgorithm;
@@ -11,6 +13,7 @@ import org.light.constant.GlobalConstant;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -23,37 +26,64 @@ public class TimeShardAlgorithm implements ComplexKeysShardingAlgorithm<Comparab
         Map<String, Collection<Comparable<?>>> columnNameAndShardingValuesMap = shardingValue.getColumnNameAndShardingValuesMap();
         Map<String, Range<Comparable<?>>> columnNameAndRangeValuesMap = shardingValue.getColumnNameAndRangeValuesMap();
 
-        List<String> physicTable = Lists.newArrayList();
+        Set<String> physicTable = Sets.newConcurrentHashSet();
         if (MapUtils.isNotEmpty(columnNameAndShardingValuesMap)) {
             Collection<Comparable<?>> shardCol = columnNameAndShardingValuesMap.get("sharding");
             Collection<Comparable<?>> gmtCol   = columnNameAndShardingValuesMap.get("gmt_create");
             if (CollectionUtils.isNotEmpty(shardCol) && CollectionUtils.isNotEmpty(gmtCol)) {
-                Comparable<?> shardObj = shardCol.iterator().next();
                 Comparable<?> gmtObj   = gmtCol.iterator().next();
-
-                String shardStr = shardObj.toString();
                 LocalDateTime gmt = convertToLocalDateTime(gmtObj);
                 String month = gmt.format(DateTimeFormatter.ofPattern("yyyyMM"));
-                int hashIdx = Math.abs(shardStr.hashCode() % GlobalConstant.M);
-                physicTable.add("easy_retry_task_" + month + "_" + hashIdx);
+                shardCol.forEach(item -> {
+                    String shardStr = item.toString();
+                    int hashIdx = Math.abs(shardStr.hashCode() % GlobalConstant.M);
+                    physicTable.add("easy_retry_task_" + month + "_" + hashIdx);
+                });
             }
         }
         if (MapUtils.isNotEmpty(columnNameAndRangeValuesMap)) {
-            Range<Comparable<?>> shardCol = columnNameAndRangeValuesMap.get("sharding");
+//            Range<Comparable<?>> shardCol = columnNameAndRangeValuesMap.get("sharding");
+            Collection<Comparable<?>> shardCol = columnNameAndShardingValuesMap.get("sharding");
             Range<Comparable<?>> gmtRange = columnNameAndRangeValuesMap.get("gmt_create");
-            if (gmtRange != null) {
-                LocalDateTime start = convertToLocalDateTime(gmtRange.lowerEndpoint());
-                LocalDateTime end   = convertToLocalDateTime(gmtRange.upperEndpoint());
-                // 按月展开所有可能后缀，再拼 hash 位
-                for (LocalDateTime cur = start; !cur.isAfter(end); cur = cur.plusMonths(1)) {
-                    String month = cur.format(DateTimeFormatter.ofPattern("yyyyMM"));
-                    for (int i = 0; i < GlobalConstant.M; i++) {
-                        physicTable.add("easy_retry_task_" + month + "_" + i);
-                    }
-                }
-            }
+            LocalDateTime start = convertToLocalDateTime(gmtRange.lowerEndpoint());
+            LocalDateTime end   = convertToLocalDateTime(gmtRange.upperEndpoint());
+            Set<String> allMonth = getAllMonth(start, end);
+            shardCol.forEach(item -> {
+                String shardStr = item.toString();
+                int hashIdx = Math.abs(shardStr.hashCode() % GlobalConstant.M);
+                allMonth.forEach(month -> {
+                    physicTable.add("easy_retry_task_" + month + "_" + hashIdx);
+                });
+            });
         }
         return  physicTable;
+    }
+
+    private Set<String> getAllMonth(LocalDateTime start, LocalDateTime end) {
+        YearMonth startYm = YearMonth.from(start);
+        YearMonth endYm   = YearMonth.from(end);
+        Set<String> months = Sets.newConcurrentHashSet();
+        for (YearMonth ym = startYm; !ym.isAfter(endYm); ym = ym.plusMonths(1)) {
+            String month = ym.format(DateTimeFormatter.ofPattern("yyyyMM"));
+            months.add(month);
+        }
+        return months;
+    }
+
+    public static void main(String[] args) {
+        LocalDateTime start = LocalDateTime.now().minusDays(30);
+        LocalDateTime end   = LocalDateTime.now();
+
+        YearMonth startYm = YearMonth.from(start);
+        YearMonth endYm   = YearMonth.from(end);
+        for (YearMonth ym = startYm; !ym.isAfter(endYm); ym = ym.plusMonths(1)) {
+            String month = ym.format(DateTimeFormatter.ofPattern("yyyyMM"));
+            System.out.println(month);
+        }
+//        for (LocalDateTime cur = start; !cur.isAfter(end); cur = cur.plusMonths(1)) {
+//            String month = cur.format(DateTimeFormatter.ofPattern("yyyyMM"));
+//            System.out.println(month);
+//        }
     }
 
     @Override

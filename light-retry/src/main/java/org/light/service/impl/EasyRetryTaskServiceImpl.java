@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.light.constant.GlobalConstant;
+import org.light.constant.LockStatusEnum;
+import org.light.constant.RetryStatusEnum;
 import org.light.dto.ShardingInfo;
 import org.light.entity.EasyRetryTask;
 import org.light.mapper.EasyRetryTaskMapper;
@@ -27,28 +29,6 @@ public class EasyRetryTaskServiceImpl extends ServiceImpl<EasyRetryTaskMapper, E
     @Value("${spring.application.name}")
     private String serviceName;
 
-    @Override
-    public List<EasyRetryTask> getPendingTasks(Integer total, Integer index, Integer size) {
-        // 注意：MOD(id, total) = index 这种复杂条件需要用 apply
-        LambdaQueryWrapper<EasyRetryTask> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(EasyRetryTask::getLockStatus, 1)
-                .apply("MOD(id, {0}) = {1}", total, index)
-                .last("LIMIT " + size);
-
-        return baseMapper.selectList(wrapper);
-    }
-
-    @Override
-    public boolean updateToProcessing(Long id) {
-        LambdaUpdateWrapper<EasyRetryTask> wrapper = new LambdaUpdateWrapper<>();
-        wrapper.set(EasyRetryTask::getLockStatus, 2)
-                .set(EasyRetryTask::getGmtModified, LocalDateTime.now())
-                .eq(EasyRetryTask::getId, id)
-                .eq(EasyRetryTask::getLockStatus, 1);
-
-        return baseMapper.update(null, wrapper) > 0;
-    }
-
     /**
      * TODO 测试
      * 获取等待重试的任务
@@ -70,12 +50,14 @@ public class EasyRetryTaskServiceImpl extends ServiceImpl<EasyRetryTaskMapper, E
         List<Integer> shards = ShardingService.calculateShards(index, total, GlobalConstant.LOGIC_NODE);
 
         LambdaQueryWrapper<EasyRetryTask> wrapper = new LambdaQueryWrapper<>();
-        // 只查询等待的
-        wrapper.eq(EasyRetryTask::getLockStatus, 1);
+        // 锁状态-只查询等待的(pending)
+        wrapper.eq(EasyRetryTask::getLockStatus, LockStatusEnum.PENDING.getCode());
+        // 任务状态-只查询未处理的(init)
+        wrapper.eq(EasyRetryTask::getRetryStatus, RetryStatusEnum.INIT.getCode());
         wrapper.in(EasyRetryTask::getSharding, shards);
-        wrapper.between(EasyRetryTask::getGmtCreate, LocalDateTime.now(), LocalDateTime.now());
+        wrapper.between(EasyRetryTask::getGmtCreate, LocalDateTime.now().minusDays(30), LocalDateTime.now());
 
-        return List.of();
+        return baseMapper.selectList(wrapper);
     }
 
     /**
@@ -90,7 +72,8 @@ public class EasyRetryTaskServiceImpl extends ServiceImpl<EasyRetryTaskMapper, E
         task.setSharding(String.valueOf(shard));
         task.setExecutorName("test");
         task.setExecutorMethodName("test");
-        task.setRetryStatus(0);
+        task.setRetryStatus(RetryStatusEnum.INIT.getCode());
+        task.setLockStatus(LockStatusEnum.PENDING.getCode());
         save(task);
     }
 }
